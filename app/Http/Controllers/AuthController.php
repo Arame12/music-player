@@ -8,37 +8,31 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    // 💡 INSCRIPTION - POST /api/register
-    // Quand quelqu'un crée un compte
+    // INSCRIPTION - POST /api/register
     public function register(Request $request)
     {
-        // Vérifier que les données envoyées sont correctes
         $request->validate([
-            'name'     => 'required|string|max:255',     // Nom obligatoire
-            'email'    => 'required|email|unique:users',  // Email unique obligatoire
-            'password' => 'required|min:6|confirmed',     // Mot de passe min 6 caractères
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users',
+            'password' => 'required|min:6|confirmed',
         ]);
 
-        // Créer l'utilisateur dans la base de données
         $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
-            'password' => Hash::make($request->password), // 💡 Hash = chiffrer le mot de passe (sécurité !)
+            'password' => Hash::make($request->password),
         ]);
 
-        // Créer un token (clé d'accès) pour cet utilisateur
-        // 💡 Le token c'est comme un badge d'accès. React va le garder et l'envoyer à chaque requête
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user'  => $user,
-            'token' => $token,
+            'user'    => $user,
+            'token'   => $token,
             'message' => 'Compte créé avec succès !'
-        ], 201); // 201 = "Créé avec succès"
+        ], 201);
     }
 
-    // 💡 CONNEXION - POST /api/login
-    // Quand quelqu'un se connecte
+    // CONNEXION - POST /api/login
     public function login(Request $request)
     {
         $request->validate([
@@ -46,32 +40,26 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        // Chercher l'utilisateur par email
         $user = User::where('email', $request->email)->first();
 
-        // Vérifier si l'utilisateur existe ET si le mot de passe est correct
         if (!$user || !Hash::check($request->password, $user->password)) {
-            // 💡 Hash::check compare le mot de passe entré avec celui chiffré dans la base
             return response()->json([
                 'message' => 'Email ou mot de passe incorrect'
-            ], 401); // 401 = "Non autorisé"
+            ], 401);
         }
 
-        // Créer un nouveau token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user'  => $user,
-            'token' => $token,
+            'user'    => $user,
+            'token'   => $token,
             'message' => 'Connexion réussie !'
         ]);
     }
 
-    // 💡 DÉCONNEXION - POST /api/logout
-    // Quand quelqu'un se déconnecte
+    // DÉCONNEXION - POST /api/logout
     public function logout(Request $request)
     {
-        // Supprimer le token actuel (invalider le badge d'accès)
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
@@ -79,8 +67,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // 💡 PROFIL - GET /api/user
-    // Récupérer les infos de l'utilisateur connecté
+    // PROFIL - GET /api/user
     public function profile(Request $request)
     {
         return response()->json($request->user());
